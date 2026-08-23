@@ -21,7 +21,7 @@ export function SplashScreen() {
     <View style={styles.root}>
       <StatusBar style="light" />
       <Image
-        source={require('../../assets/images/splash-bg.png')}
+        source={require('../../assets/images/splash-bg.jpg')}
         style={StyleSheet.absoluteFill}
         contentFit="cover"
       />
