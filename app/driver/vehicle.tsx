@@ -9,23 +9,25 @@ import { Button } from '@/components/ui/button';
 import { Screen } from '@/components/ui/screen';
 import { driver } from '@/constants/data';
 import { Colors, Radius } from '@/constants/theme';
+import { useTrip } from '@/context/trip-context';
 
 export default function VehicleIdentifiedScreen() {
   const router = useRouter();
+  const { identifiedVehicle } = useTrip();
 
   return (
     <Screen scroll bottom={<Button label="Continuer" onPress={() => router.push('/driver/engine')} />}>
       <BackButton />
       <GarageReady />
       <Section title="VÉHICULE">
-        <Text style={styles.name}>{driver.vehicle.name}</Text>
+        <Text style={styles.name}>{identifiedVehicle.name}</Text>
         <Text style={styles.meta}>
-          {driver.vehicle.plate} • {driver.vehicle.year}
+          {identifiedVehicle.plate} • {identifiedVehicle.year}
         </Text>
         <Row label="Statut" value={<Badge label="Disponible" tone="success" />} />
         <Row label="GPS" value={<Badge label="Connecté" tone="success" />} />
         <Row label="Dernière comm." value="Il y a 2 min" />
-        <Row label="Kilométrage" value="142 380 km" last />
+        <Row label="Kilométrage" value={`${identifiedVehicle.km.toLocaleString('fr-FR')} km`} last />
       </Section>
       <Section title="AFFECTATION">
         <Row label="Chauffeur" value={driver.fullName} accent />

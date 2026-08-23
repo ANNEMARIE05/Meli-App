@@ -10,10 +10,12 @@ import { Screen } from '@/components/ui/screen';
 import { driver } from '@/constants/data';
 import { Colors, Radius } from '@/constants/theme';
 import { useLocation } from '@/context/location-context';
+import { useTrip } from '@/context/trip-context';
 
 export default function InitialStateScreen() {
   const router = useRouter();
   const geo = useLocation();
+  const { identifiedVehicle } = useTrip();
   const gpsOk = geo.permission === 'granted' && !!geo.coords;
 
   return (
@@ -36,8 +38,8 @@ export default function InitialStateScreen() {
       />
 
       <Block title="VÉHICULE">
-        <Line label="Marque / Modèle" value={driver.vehicle.name} />
-        <Line label="Immatriculation" value={driver.vehicle.plate} last />
+        <Line label="Marque / Modèle" value={identifiedVehicle.name} />
+        <Line label="Immatriculation" value={identifiedVehicle.plate} last />
       </Block>
 
       <Block title="CHAUFFEUR">
@@ -55,7 +57,7 @@ export default function InitialStateScreen() {
       <Block title="TÉLÉMATIQUE">
         <Line label="Moteur" value={<Badge label="ON" tone="success" />} />
         <Line label="Vitesse actuelle" value={`${geo.speedKmh} km/h`} />
-        <Line label="Kilométrage" value="142 380 km" />
+        <Line label="Kilométrage" value={`${identifiedVehicle.km.toLocaleString('fr-FR')} km`} />
         <Line label="Source km" value={<Text style={styles.warn}>donnée OBD non disponible</Text>} />
         <Line
           label="GPS"

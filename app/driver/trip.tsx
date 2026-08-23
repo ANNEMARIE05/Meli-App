@@ -13,22 +13,22 @@ import { tripTimeLabel, useTrip } from '@/context/trip-context';
 export default function TripScreen() {
   const router = useRouter();
   const geo = useLocation();
-  const trip = useTrip();
+  const { startedAt, addPoint, path, distanceKm, fromAddress, endTrip } = useTrip();
   const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
-    const started = trip.startedAt?.getTime() ?? Date.now();
+    const started = startedAt?.getTime() ?? Date.now();
     const tick = () => setSeconds(Math.max(0, Math.floor((Date.now() - started) / 1000)));
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [trip.startedAt]);
+  }, [startedAt]);
 
   useEffect(() => {
     if (geo.coords) {
-      trip.addPoint(geo.coords);
+      addPoint(geo.coords);
     }
-  }, [geo.coords, trip.addPoint]);
+  }, [addPoint, geo.coords]);
 
   const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
   const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
@@ -41,7 +41,7 @@ export default function TripScreen() {
         fill
         latitude={geo.coords?.latitude}
         longitude={geo.coords?.longitude}
-        path={trip.path}
+        path={path}
         permissionDenied={geo.permission === 'denied'}
         onRequestPermission={() => void geo.requestPermission()}
       />
@@ -58,7 +58,7 @@ export default function TripScreen() {
 
         <View style={styles.stats}>
           <Stat label="Durée" value={`${h}:${m}:${s}`} />
-          <Stat label="Distance" value={formatDistance(trip.distanceKm)} />
+          <Stat label="Distance" value={formatDistance(distanceKm)} />
           <Stat label="Vitesse" value={`${geo.speedKmh} km/h`} />
         </View>
 
@@ -66,7 +66,7 @@ export default function TripScreen() {
 
         <View style={styles.bottomBar}>
           <Text style={styles.bottomText}>
-            Départ {trip.fromAddress || geo.address} {tripTimeLabel(trip.startedAt) || formatClock()}
+            Départ {fromAddress || geo.address} {tripTimeLabel(startedAt) || formatClock()}
           </Text>
           <Text style={styles.bottomMeta}>
             GPS • {gpsOk ? 'Actif' : 'En attente'}    Position : {geo.address}
@@ -75,7 +75,7 @@ export default function TripScreen() {
         <Button
           label="Terminer la course"
           onPress={() => {
-            trip.endTrip(geo.address);
+            endTrip(geo.address);
             router.replace('/driver/summary');
           }}
         />

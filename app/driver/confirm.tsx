@@ -17,6 +17,7 @@ export default function ConfirmScreen() {
   const router = useRouter();
   const geo = useLocation();
   const trip = useTrip();
+  const vehicle = trip.identifiedVehicle;
   const gpsOk = geo.permission === 'granted' && !!geo.coords;
 
   return (
@@ -45,8 +46,8 @@ export default function ConfirmScreen() {
 
       <Text style={styles.section}>RÉSUMÉ</Text>
       <View style={styles.card}>
-        <Row label="Véhicule" value={driver.vehicle.name} />
-        <Row label="Immatriculation" value={driver.vehicle.plate} />
+        <Row label="Véhicule" value={vehicle.name} />
+        <Row label="Immatriculation" value={vehicle.plate} />
         <Row label="Chauffeur" value={driver.fullName} />
         <Row label="Lieu de départ" value={geo.address} />
         <Row label="Heure" value={formatClock()} />

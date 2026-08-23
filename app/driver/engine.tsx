@@ -5,13 +5,14 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Badge } from '@/components/ui/badge';
 import { Screen } from '@/components/ui/screen';
-import { driver } from '@/constants/data';
 import { Colors, Radius } from '@/constants/theme';
 import { useLocation } from '@/context/location-context';
+import { useTrip } from '@/context/trip-context';
 
 export default function EngineScreen() {
   const router = useRouter();
   const geo = useLocation();
+  const { identifiedVehicle } = useTrip();
   const gpsOk = geo.permission === 'granted' && !!geo.coords;
   const [pulse, setPulse] = useState(false);
 
@@ -40,8 +41,8 @@ export default function EngineScreen() {
       <View style={styles.card}>
         <View style={styles.cardHead}>
           <View>
-            <Text style={styles.vehicle}>{driver.vehicle.name}</Text>
-            <Text style={styles.plate}>{driver.vehicle.plate}</Text>
+            <Text style={styles.vehicle}>{identifiedVehicle.name}</Text>
+            <Text style={styles.plate}>{identifiedVehicle.plate}</Text>
           </View>
           <Badge label="En attente du démarrage" tone="warning" />
         </View>

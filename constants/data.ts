@@ -219,6 +219,59 @@ export function getVehicle(id: string) {
   return vehicles.find((v) => v.id === id) ?? vehicles[0];
 }
 
+export type IdentifiedVehicle = {
+  id: string;
+  name: string;
+  plate: string;
+  year: number;
+  km: number;
+};
+
+export const assignedVehicle: IdentifiedVehicle = {
+  id: 'hiace',
+  name: driver.vehicle.name,
+  plate: driver.vehicle.plate,
+  year: driver.vehicle.year,
+  km: driver.vehicle.km,
+};
+
+function normalizeScanToken(value: string) {
+  return value.toLowerCase().replace(/[\s-]/g, '');
+}
+
+export function resolveVehicleFromScan(raw: string): IdentifiedVehicle | null {
+  const data = raw.trim();
+  if (!data) return null;
+
+  let parsed: { id?: string; plate?: string } | null = null;
+  if (data.startsWith('{')) {
+    try {
+      parsed = JSON.parse(data) as { id?: string; plate?: string };
+    } catch {
+      parsed = null;
+    }
+  }
+
+  const needle = normalizeScanToken(parsed?.id ?? parsed?.plate ?? data);
+  const catalog: IdentifiedVehicle[] = [
+    assignedVehicle,
+    ...vehicles.map((v) => ({
+      id: v.id,
+      name: v.name,
+      plate: v.plate,
+      year: v.year,
+      km: v.km,
+    })),
+  ];
+
+  return (
+    catalog.find(
+      (item) =>
+        normalizeScanToken(item.id) === needle || normalizeScanToken(item.plate) === needle
+    ) ?? null
+  );
+}
+
 export const statusLabel: Record<VehicleStatus, string> = {
   actif: 'Actif',
   arrete: 'Arrêté',

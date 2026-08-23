@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { MapPreview } from '@/components/ui/map-preview';
 import { Screen } from '@/components/ui/screen';
 import { formatDistance, formatDuration } from '@/constants/geo';
-import { driver } from '@/constants/data';
 import { Colors, Radius } from '@/constants/theme';
 import { useLocation } from '@/context/location-context';
 import { tripTimeLabel, useTrip } from '@/context/trip-context';
@@ -15,7 +14,7 @@ import { tripTimeLabel, useTrip } from '@/context/trip-context';
 export default function TripSummaryScreen() {
   const router = useRouter();
   const geo = useLocation();
-  const { lastTrip } = useTrip();
+  const { lastTrip, identifiedVehicle } = useTrip();
   const lastPoint = lastTrip?.path[lastTrip.path.length - 1] ?? geo.coords;
 
   return (
@@ -38,8 +37,8 @@ export default function TripSummaryScreen() {
 
       <Text style={styles.section}>VÉHICULE</Text>
       <View style={styles.card}>
-        <Row label="Modèle" value={driver.vehicle.name} />
-        <Row label="Immatriculation" value={driver.vehicle.plate} last />
+        <Row label="Modèle" value={identifiedVehicle.name} />
+        <Row label="Immatriculation" value={identifiedVehicle.plate} last />
       </View>
 
       <Text style={styles.section}>STATISTIQUES</Text>

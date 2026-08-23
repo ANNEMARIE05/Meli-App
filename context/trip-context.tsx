@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
+import { assignedVehicle, type IdentifiedVehicle } from '@/constants/data';
 import { formatClock, haversineKm, type GeoPoint } from '@/constants/geo';
 
 type TripSnapshot = {
@@ -14,11 +15,13 @@ type TripSnapshot = {
 
 type TripContextValue = {
   active: boolean;
+  identifiedVehicle: IdentifiedVehicle;
   fromAddress: string;
   startedAt: Date | null;
   path: GeoPoint[];
   distanceKm: number;
   lastTrip: TripSnapshot | null;
+  identifyVehicle: (vehicle: IdentifiedVehicle) => void;
   startTrip: (address: string, point: GeoPoint | null) => void;
   addPoint: (point: GeoPoint) => void;
   endTrip: (address: string) => TripSnapshot | null;
@@ -28,11 +31,16 @@ const TripContext = createContext<TripContextValue | null>(null);
 
 export function TripProvider({ children }: { children: ReactNode }) {
   const [active, setActive] = useState(false);
+  const [identifiedVehicle, setIdentifiedVehicle] = useState<IdentifiedVehicle>(assignedVehicle);
   const [fromAddress, setFromAddress] = useState('');
   const [startedAt, setStartedAt] = useState<Date | null>(null);
   const [path, setPath] = useState<GeoPoint[]>([]);
   const [distanceKm, setDistanceKm] = useState(0);
   const [lastTrip, setLastTrip] = useState<TripSnapshot | null>(null);
+
+  const identifyVehicle = useCallback((vehicle: IdentifiedVehicle) => {
+    setIdentifiedVehicle(vehicle);
+  }, []);
 
   const startTrip = useCallback((address: string, point: GeoPoint | null) => {
     setActive(true);
@@ -79,16 +87,30 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const value = useMemo<TripContextValue>(
     () => ({
       active,
+      identifiedVehicle,
       fromAddress,
       startedAt,
       path,
       distanceKm,
       lastTrip,
+      identifyVehicle,
       startTrip,
       addPoint,
       endTrip,
     }),
-    [active, addPoint, distanceKm, endTrip, fromAddress, lastTrip, path, startTrip, startedAt]
+    [
+      active,
+      addPoint,
+      distanceKm,
+      endTrip,
+      fromAddress,
+      identifiedVehicle,
+      identifyVehicle,
+      lastTrip,
+      path,
+      startTrip,
+      startedAt,
+    ]
   );
 
   return <TripContext.Provider value={value}>{children}</TripContext.Provider>;
