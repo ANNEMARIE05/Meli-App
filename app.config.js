@@ -25,7 +25,7 @@ const config = {
   android: {
     package: 'com.annemarie05.meliapp',
     adaptiveIcon: {
-      backgroundColor: '#E6F4FE',
+      backgroundColor: '#14171C',
       foregroundImage: './assets/images/android-icon-foreground.png',
       backgroundImage: './assets/images/android-icon-background.png',
       monochromeImage: './assets/images/android-icon-monochrome.png',

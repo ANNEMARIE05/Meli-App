@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Colors, Radius } from '@/constants/theme';
-import type { GeoPoint } from '@/constants/geo';
+import { FALLBACK_COORDS, type GeoPoint } from '@/constants/geo';
+import { Colors, Radius, Shadow } from '@/constants/theme';
 
 type Props = {
   label?: string;
@@ -10,6 +11,7 @@ type Props = {
   dark?: boolean;
   compact?: boolean;
   fill?: boolean;
+  interactive?: boolean;
   latitude?: number;
   longitude?: number;
   path?: GeoPoint[];
@@ -24,16 +26,37 @@ export function MapPreview({
   dark,
   compact,
   fill,
+  interactive,
+  latitude,
+  longitude,
   permissionDenied,
   onRequestPermission,
 }: Props) {
+  const lat = latitude ?? FALLBACK_COORDS.latitude;
+  const lng = longitude ?? FALLBACK_COORDS.longitude;
+  const delta = 0.012;
+
+  const osmUrl = useMemo(() => {
+    const minLon = lng - delta;
+    const minLat = lat - delta;
+    const maxLon = lng + delta;
+    const maxLat = lat + delta;
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${minLon}%2C${minLat}%2C${maxLon}%2C${maxLat}&layer=mapnik&marker=${lat}%2C${lng}`;
+  }, [lat, lng]);
+
   return (
     <View style={[styles.wrap, fill ? styles.fill : { height }, dark && styles.dark]}>
-      <View style={[styles.road, { top: '28%', left: -20, width: '80%', transform: [{ rotate: '-8deg' }] }]} />
-      <View style={[styles.road, styles.roadAlt, { top: '58%', left: 30, width: '90%', transform: [{ rotate: '12deg' }] }]} />
-      <View style={styles.pinWrap}>
-        <Ionicons name="location" size={compact ? 22 : 28} color={Colors.primary} />
-      </View>
+      <iframe
+        title="Carte GPS"
+        src={osmUrl}
+        style={{
+          width: '100%',
+          height: '100%',
+          border: 0,
+          pointerEvents: interactive || fill ? 'auto' : 'none',
+        }}
+      />
+
       {label ? (
         <View style={styles.caption}>
           <View style={styles.dot} />
@@ -42,8 +65,10 @@ export function MapPreview({
           </Text>
         </View>
       ) : null}
+
       {permissionDenied ? (
         <Pressable style={styles.perm} onPress={onRequestPermission}>
+          <Ionicons name="locate" size={16} color={Colors.white} />
           <Text style={styles.permText}>Autoriser la localisation</Text>
         </Pressable>
       ) : null}
@@ -60,18 +85,6 @@ const styles = StyleSheet.create({
   },
   fill: { ...StyleSheet.absoluteFillObject, borderRadius: 0 },
   dark: { backgroundColor: '#1B2430' },
-  road: {
-    position: 'absolute',
-    height: 10,
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    borderRadius: 6,
-  },
-  roadAlt: { backgroundColor: 'rgba(210, 220, 200, 0.9)' },
-  pinWrap: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   caption: {
     position: 'absolute',
     left: 12,
@@ -84,6 +97,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    ...Shadow.soft,
   },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.primary },
   captionText: { color: Colors.white, fontSize: 12, fontWeight: '600', flex: 1 },
@@ -96,6 +110,10 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
     paddingVertical: 8,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    ...Shadow.soft,
   },
   permText: { color: Colors.white, fontWeight: '700' },
 });

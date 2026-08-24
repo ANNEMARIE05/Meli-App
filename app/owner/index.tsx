@@ -47,8 +47,10 @@ export default function OwnerHomeScreen() {
       <View style={styles.quick}>
         <Quick icon="car-sport-outline" label="Véhicules" onPress={() => router.push('/owner/vehicles')} />
         <Quick icon="navigate-outline" label="Suivi" onPress={() => router.push({ pathname: '/owner/tracking/[id]', params: { id: 'hilux' } })} />
+        <Quick icon="time-outline" label="Historique" onPress={() => router.push('/owner/history')} />
         <Quick icon="notifications-outline" label="Alertes" onPress={() => router.push('/owner/alerts')} />
         <Quick icon="bar-chart-outline" label="Rapports" onPress={() => router.push('/owner/reports')} />
+        <Quick icon="construct-outline" label="Entretiens" onPress={() => router.push('/owner/maintenance')} />
       </View>
 
       <View style={styles.rowBetween}>
@@ -153,8 +155,13 @@ const styles = StyleSheet.create({
   },
   metricText: { fontSize: 12, fontWeight: '700', color: Colors.text },
   section: { marginTop: 20, marginBottom: 12, fontWeight: '800', fontSize: 16, color: Colors.text },
-  quick: { flexDirection: 'row', justifyContent: 'space-between' },
-  quickItem: { alignItems: 'center', width: 72 },
+  quick: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 14,
+    justifyContent: 'space-between',
+  },
+  quickItem: { alignItems: 'center', width: '31%' },
   quickIcon: {
     width: 54,
     height: 54,

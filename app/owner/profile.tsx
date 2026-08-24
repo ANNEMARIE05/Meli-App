@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { BackButton } from '@/components/ui/back-button';
 import { Button } from '@/components/ui/button';
 import { Screen } from '@/components/ui/screen';
 import { owner, vehicles } from '@/constants/data';
@@ -21,7 +22,12 @@ export default function ProfileScreen() {
 
   return (
     <Screen scroll>
-      <Text style={styles.title}>Mon Profil</Text>
+      <View style={styles.top}>
+        <BackButton />
+        <Text style={styles.title}>Mon Profil</Text>
+        <View style={{ width: 42 }} />
+      </View>
+
       <View style={styles.hero}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{name.slice(0, 1)}</Text>
@@ -42,15 +48,23 @@ export default function ProfileScreen() {
         <Mini icon="notifications-outline" value="7" label="Alertes" />
       </View>
 
+      <Group title="NAVIGATION">
+        <Row icon="home-outline" label="Retour à l'accueil" onPress={() => router.push('/owner')} />
+        <Row icon="time-outline" label="Historique des trajets" last onPress={() => router.push('/owner/history')} />
+      </Group>
+
       <Group title="COORDONNÉES">
         <Row icon="call-outline" label={user?.phone ?? owner.phone} />
         <Row icon="mail-outline" label={user?.email ?? owner.email} last />
       </Group>
+
       <Group title="PARAMÈTRES">
-        <Row icon="notifications-outline" label="Notifications" onPress={() => router.push('/owner/alerts')} />
+        <Row icon="notifications-outline" label="Notifications & Alertes" onPress={() => router.push('/owner/alerts')} />
         <Row icon="car-outline" label="Mes véhicules" onPress={() => router.push('/owner/vehicles')} />
+        <Row icon="bar-chart-outline" label="Rapports d'activité" onPress={() => router.push('/owner/reports')} />
         <Row icon="lock-closed-outline" label="Sécurité" last onPress={() => router.push('/(auth)/new-password')} />
       </Group>
+
       <Group title="SUPPORT">
         <Row icon="help-circle-outline" label="Aide & FAQ" />
         <Row icon="star-outline" label="Évaluer l'application" last />
@@ -109,7 +123,13 @@ function Row({
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 24, fontWeight: '800', color: Colors.text, marginBottom: 12 },
+  top: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  title: { fontSize: 20, fontWeight: '800', color: Colors.text },
   hero: { alignItems: 'center', marginBottom: 16 },
   avatar: {
     width: 84,
