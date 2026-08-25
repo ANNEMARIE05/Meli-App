@@ -1,4 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
 import { Colors, Radius } from '@/constants/theme';
@@ -76,15 +77,12 @@ export function ShieldCheck() {
 
 export function GarageReady() {
   return (
-    <View style={styles.stage}>
-      <MaterialCommunityIcons name="garage-open" size={80} color="#D7D7DC" />
-      <MaterialCommunityIcons name="van-utility" size={70} color="#CFCFD4" />
-      <View style={[styles.miniCheck, { left: 40 }]}>
-        <Ionicons name="checkmark" size={14} color={Colors.white} />
-      </View>
-      <View style={[styles.miniCheck, { right: 44 }]}>
-        <Ionicons name="checkmark" size={14} color={Colors.white} />
-      </View>
+    <View style={styles.hero}>
+      <Image
+        source={require('../assets/images/vehicle-identified-hero.png')}
+        style={styles.heroImage}
+        contentFit="contain"
+      />
     </View>
   );
 }
@@ -158,16 +156,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
     borderLeftColor: '#E6E6EA',
   },
-  miniCheck: {
-    position: 'absolute',
-    bottom: 44,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: Colors.success,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   emptyBox: {
     width: 180,
     height: 180,
@@ -187,5 +175,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  hero: {
+    height: 168,
+    marginBottom: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
   },
 });
