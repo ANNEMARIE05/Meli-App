@@ -8,6 +8,7 @@ import { Colors } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { LocationProvider } from '@/context/location-context';
 import { TripProvider } from '@/context/trip-context';
+import { WhatsGPSProvider } from '@/context/whatsgps-context';
 
 const AppTheme = {
   ...DefaultTheme,
@@ -27,8 +28,10 @@ function LocatedApp() {
   return (
     <LocationProvider enabled={ready && !!user}>
       <TripProvider>
-        <RootNavigator />
-        <StatusBar style="dark" />
+        <WhatsGPSProvider>
+          <RootNavigator />
+          <StatusBar style="dark" />
+        </WhatsGPSProvider>
       </TripProvider>
     </LocationProvider>
   );

@@ -56,6 +56,25 @@ export function formatClock(date = new Date()) {
   return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
+export function formatRelativeTime(date: Date | null | undefined) {
+  if (!date) {
+    return '—';
+  }
+  const sec = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
+  if (sec < 15) {
+    return 'à l’instant';
+  }
+  if (sec < 60) {
+    return `il y a ${sec} sec`;
+  }
+  const min = Math.round(sec / 60);
+  if (min < 60) {
+    return `il y a ${min} min`;
+  }
+  const hours = Math.round(min / 60);
+  return `il y a ${hours} h`;
+}
+
 export function formatDuration(totalSeconds: number) {
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);

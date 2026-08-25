@@ -8,16 +8,23 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Screen } from '@/components/ui/screen';
 import { driver } from '@/constants/data';
+import { formatRelativeTime } from '@/constants/geo';
 import { Colors, Radius } from '@/constants/theme';
+import { useLocation } from '@/context/location-context';
 import { useTrip } from '@/context/trip-context';
 
 export default function VehicleIdentifiedScreen() {
   const router = useRouter();
+  const geo = useLocation();
   const { identifiedVehicle } = useTrip();
+  const gpsOk = geo.permission === 'granted' && !!geo.coords;
 
   return (
     <Screen scroll bottom={<Button label="Continuer" onPress={() => router.push('/driver/engine')} />}>
-      <BackButton />
+      <View style={styles.top}>
+        <BackButton />
+        <Text style={styles.header}>Véhicule identifié</Text>
+      </View>
       <GarageReady />
       <Section title="VÉHICULE">
         <Text style={styles.name}>{identifiedVehicle.name}</Text>
@@ -25,8 +32,11 @@ export default function VehicleIdentifiedScreen() {
           {identifiedVehicle.plate} • {identifiedVehicle.year}
         </Text>
         <Row label="Statut" value={<Badge label="Disponible" tone="success" />} />
-        <Row label="GPS" value={<Badge label="Connecté" tone="success" />} />
-        <Row label="Dernière comm." value="Il y a 2 min" />
+        <Row
+          label="GPS"
+          value={<Badge label={gpsOk ? 'Connecté' : 'En attente'} tone={gpsOk ? 'success' : 'warning'} />}
+        />
+        <Row label="Dernière comm." value={gpsOk ? formatRelativeTime(geo.lastFixAt) : '—'} />
         <Row label="Kilométrage" value={`${identifiedVehicle.km.toLocaleString('fr-FR')} km`} last />
       </Section>
       <Section title="AFFECTATION">
@@ -71,6 +81,8 @@ function Row({
 }
 
 const styles = StyleSheet.create({
+  top: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
+  header: { fontSize: 20, fontWeight: '800', color: Colors.text },
   section: { marginBottom: 18 },
   sectionTitle: { color: Colors.textSecondary, fontWeight: '800', letterSpacing: 0.6, marginBottom: 8 },
   card: {

@@ -58,6 +58,11 @@ export default function ProfileScreen() {
         <Row icon="mail-outline" label={user?.email ?? owner.email} last />
       </Group>
 
+      <Group title="ABONNEMENT & FACTURATION">
+        <Row icon="card-outline" label="Mon Abonnement GPS & Factures" onPress={() => router.push('/owner/subscription')} />
+        <Row icon="construct-outline" label="Gestion Maintenance & Seuils" last onPress={() => router.push('/owner/maintenance')} />
+      </Group>
+
       <Group title="PARAMÈTRES">
         <Row icon="notifications-outline" label="Notifications & Alertes" onPress={() => router.push('/owner/alerts')} />
         <Row icon="car-outline" label="Mes véhicules" onPress={() => router.push('/owner/vehicles')} />

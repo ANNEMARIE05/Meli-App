@@ -21,16 +21,18 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function submit() {
-    if (!email.trim() || !password.trim()) {
-      setError('Renseignez votre e-mail et votre mot de passe.');
-      return;
-    }
+  async function submit(customRole?: UserRole) {
+    const activeRole = customRole || role;
     setError('');
     setLoading(true);
     try {
-      await login({ email, password, role, remember });
-      router.replace((role === 'driver' ? '/driver' : '/owner') as Href);
+      await login({
+        email: email || (activeRole === 'owner' ? 'h.kouadio@meli.app' : 'karim.diallo@transcorp.ci'),
+        password: password || '123456',
+        role: activeRole,
+        remember,
+      });
+      router.replace((activeRole === 'driver' ? '/driver' : '/owner') as Href);
     } finally {
       setLoading(false);
     }
@@ -43,6 +45,25 @@ export default function LoginScreen() {
       </View>
       <Text style={styles.title}>Connecte toi</Text>
       <Text style={styles.subtitle}>Rejoignez Meli app. Connectez-vous pour continuer</Text>
+
+      {/* Demo Quick Access */}
+      <View style={styles.demoCard}>
+        <Text style={styles.demoTitle}>ACCÈS RAPIDE DÉMO :</Text>
+        <View style={styles.demoButtons}>
+          <Pressable
+            style={[styles.demoBtn, { backgroundColor: Colors.primarySoft }]}
+            onPress={() => void submit('owner')}>
+            <Ionicons name="business" size={16} color={Colors.primary} />
+            <Text style={[styles.demoBtnText, { color: Colors.primary }]}>Espace Propriétaire</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.demoBtn, { backgroundColor: '#EFF6FF' }]}
+            onPress={() => void submit('driver')}>
+            <Ionicons name="car" size={16} color="#2563EB" />
+            <Text style={[styles.demoBtnText, { color: '#2563EB' }]}>Espace Chauffeur</Text>
+          </Pressable>
+        </View>
+      </View>
 
       <View style={styles.roles}>
         {(['owner', 'driver'] as const).map((r) => (
@@ -115,9 +136,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: Colors.textSecondary,
     marginTop: 8,
-    marginBottom: 20,
+    marginBottom: 16,
     lineHeight: 20,
   },
+  demoCard: {
+    backgroundColor: Colors.white,
+    borderRadius: Radius.lg,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 16,
+  },
+  demoTitle: { fontSize: 11, fontWeight: '800', color: Colors.textSecondary, letterSpacing: 0.5, marginBottom: 8 },
+  demoButtons: { flexDirection: 'row', gap: 8 },
+  demoBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: Radius.md,
+  },
+  demoBtnText: { fontSize: 12, fontWeight: '800' },
   roles: { flexDirection: 'row', gap: 10, marginBottom: 18 },
   role: {
     flex: 1,

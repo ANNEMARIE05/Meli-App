@@ -5,6 +5,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { FALLBACK_COORDS, type GeoPoint } from '@/constants/geo';
 import { Colors, Radius, Shadow } from '@/constants/theme';
 
+import type { ExtraMarker, MapFence } from './map-preview';
+
 type Props = {
   label?: string;
   height?: number;
@@ -14,11 +16,15 @@ type Props = {
   interactive?: boolean;
   latitude?: number;
   longitude?: number;
+  heading?: number;
   path?: GeoPoint[];
+  fences?: MapFence[];
+  markers?: ExtraMarker[];
   showUser?: boolean;
   permissionDenied?: boolean;
   onRequestPermission?: () => void;
 };
+
 
 export function MapPreview({
   label,
@@ -32,30 +38,41 @@ export function MapPreview({
   permissionDenied,
   onRequestPermission,
 }: Props) {
+  const hasFix = latitude != null && longitude != null;
   const lat = latitude ?? FALLBACK_COORDS.latitude;
   const lng = longitude ?? FALLBACK_COORDS.longitude;
   const delta = 0.012;
 
   const osmUrl = useMemo(() => {
+    if (!hasFix) {
+      return null;
+    }
     const minLon = lng - delta;
     const minLat = lat - delta;
     const maxLon = lng + delta;
     const maxLat = lat + delta;
     return `https://www.openstreetmap.org/export/embed.html?bbox=${minLon}%2C${minLat}%2C${maxLon}%2C${maxLat}&layer=mapnik&marker=${lat}%2C${lng}`;
-  }, [lat, lng]);
+  }, [hasFix, lat, lng]);
 
   return (
     <View style={[styles.wrap, fill ? styles.fill : { height }, dark && styles.dark]}>
-      <iframe
-        title="Carte GPS"
-        src={osmUrl}
-        style={{
-          width: '100%',
-          height: '100%',
-          border: 0,
-          pointerEvents: interactive || fill ? 'auto' : 'none',
-        }}
-      />
+      {osmUrl ? (
+        <iframe
+          title="Carte GPS"
+          src={osmUrl}
+          style={{
+            width: '100%',
+            height: '100%',
+            border: 0,
+            pointerEvents: interactive || fill ? 'auto' : 'none',
+          }}
+        />
+      ) : (
+        <View style={styles.waiting}>
+          <Ionicons name="locate-outline" size={22} color={Colors.textSecondary} />
+          <Text style={styles.waitingText}>En attente de la position GPS…</Text>
+        </View>
+      )}
 
       {label ? (
         <View style={styles.caption}>
@@ -85,6 +102,14 @@ const styles = StyleSheet.create({
   },
   fill: { ...StyleSheet.absoluteFillObject, borderRadius: 0 },
   dark: { backgroundColor: '#1B2430' },
+  waiting: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 16,
+  },
+  waitingText: { color: Colors.textSecondary, fontSize: 13, fontWeight: '600' },
   caption: {
     position: 'absolute',
     left: 12,

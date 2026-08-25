@@ -5,9 +5,11 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { BackButton } from '@/components/ui/back-button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Screen } from '@/components/ui/screen';
-import { statusLabel, vehicles, type VehicleStatus } from '@/constants/data';
+import { vehicles as mockVehicles, type VehicleStatus } from '@/constants/data';
 import { Colors, Radius } from '@/constants/theme';
+import { useWhatsGPS } from '@/context/whatsgps-context';
 
 const filters: { id: 'all' | VehicleStatus; label: string }[] = [
   { id: 'all', label: 'Tous' },
@@ -18,27 +20,40 @@ const filters: { id: 'all' | VehicleStatus; label: string }[] = [
 
 export default function VehiclesScreen() {
   const router = useRouter();
+  const { vehicles: gpsVehicles, statuses } = useWhatsGPS();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<(typeof filters)[number]['id']>('all');
 
-  const list = useMemo(
-    () =>
-      vehicles.filter((v) => {
-        const matchFilter = filter === 'all' || v.status === filter;
-        const q = query.toLowerCase();
-        const matchQuery = v.name.toLowerCase().includes(q) || v.plate.toLowerCase().includes(q);
-        return matchFilter && matchQuery;
-      }),
-    [filter, query]
-  );
+  const list = useMemo(() => {
+    return mockVehicles.map((mv, index) => {
+      const gpsMatch = gpsVehicles[index];
+      const liveStatus = gpsMatch ? statuses[gpsMatch.carId] : undefined;
+      return {
+        ...mv,
+        carId: gpsMatch?.carId || (index + 1001),
+        imei: gpsMatch?.imei || '868014041234567',
+        online: liveStatus ? liveStatus.online : mv.status === 'actif',
+        speed: liveStatus ? liveStatus.speed : 0,
+      };
+    }).filter((v) => {
+      const matchFilter = filter === 'all' || v.status === filter;
+      const q = query.toLowerCase();
+      const matchQuery = v.name.toLowerCase().includes(q) || v.plate.toLowerCase().includes(q) || v.imei.includes(q);
+      return matchFilter && matchQuery;
+    });
+  }, [gpsVehicles, statuses, filter, query]);
 
   return (
-    <Screen scroll>
+    <Screen
+      scroll
+      bottom={
+        <Button label="Ajouter un nouveau véhicule" onPress={() => router.push('/owner/vehicle-form')} />
+      }>
       <View style={styles.top}>
         <BackButton />
         <View>
-          <Text style={styles.title}>Mes Véhicules</Text>
-          <Text style={styles.sub}>{vehicles.length} véhicules enregistrés</Text>
+          <Text style={styles.title}>Mes Véhicules & Balises</Text>
+          <Text style={styles.sub}>{list.length} véhicules connectés WhatsGPS</Text>
         </View>
       </View>
 
@@ -47,7 +62,7 @@ export default function VehiclesScreen() {
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Rechercher un véhicule..."
+          placeholder="Rechercher par nom, immatriculation ou IMEI..."
           placeholderTextColor={Colors.textMuted}
           style={styles.searchInput}
         />
@@ -62,29 +77,35 @@ export default function VehiclesScreen() {
       </View>
 
       {list.map((v) => (
-        <Pressable key={v.id} style={styles.card} onPress={() => router.push({ pathname: '/owner/vehicle/[id]', params: { id: v.id } })}>
+        <Pressable
+          key={v.id}
+          style={styles.card}
+          onPress={() => router.push({ pathname: '/owner/tracking/[id]', params: { id: String(v.carId) } })}
+        >
           <View style={styles.icon}>
             <Ionicons name="car-outline" size={22} color={Colors.primary} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.name}>{v.name}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={styles.name}>{v.name}</Text>
+              <View style={[styles.statusDot, { backgroundColor: v.online ? '#2E7D32' : '#9E9E9E' }]} />
+            </View>
             <Text style={styles.meta}>
-              {v.plate} | {v.type} - {v.year} - {v.km.toLocaleString('fr-FR')} km
+              {v.plate} • IMEI: {v.imei}
+            </Text>
+            <Text style={styles.metaSub}>
+              {v.type} • {v.km.toLocaleString('fr-FR')} km {v.speed > 0 ? `• Vitesse: ${Math.round(v.speed)} km/h` : ''}
             </Text>
             <View style={{ marginTop: 8, alignSelf: 'flex-start' }}>
               <Badge
-                label={`• ${statusLabel[v.status]}`}
-                tone={v.status === 'actif' ? 'success' : v.status === 'maintenance' ? 'warning' : 'neutral'}
+                label={v.online ? (v.speed > 0 ? 'En route' : 'À l’arrêt (En ligne)') : 'Hors-ligne'}
+                tone={v.online ? (v.speed > 0 ? 'success' : 'info') : 'neutral'}
               />
             </View>
           </View>
           <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
         </Pressable>
       ))}
-
-      <Pressable style={styles.add} onPress={() => router.push('/owner/add-vehicle')}>
-        <Text style={styles.addText}>+ Ajouter un véhicule</Text>
-      </Pressable>
     </Screen>
   );
 }
@@ -134,7 +155,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   name: { fontWeight: '800', color: Colors.text, fontSize: 16 },
+  statusDot: { width: 8, height: 8, borderRadius: 4 },
   meta: { color: Colors.textSecondary, fontSize: 12, marginTop: 3 },
-  add: { alignItems: 'center', paddingVertical: 16 },
-  addText: { color: Colors.primary, fontWeight: '800' },
+  metaSub: { color: Colors.textMuted, fontSize: 11, marginTop: 2 },
 });
+

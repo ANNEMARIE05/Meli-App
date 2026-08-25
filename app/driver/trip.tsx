@@ -65,12 +65,23 @@ export default function TripScreen() {
         <View style={{ flex: 1 }} />
 
         <View style={styles.bottomBar}>
-          <Text style={styles.bottomText}>
-            Départ {fromAddress || geo.address} {tripTimeLabel(startedAt) || formatClock()}
-          </Text>
-          <Text style={styles.bottomMeta}>
-            GPS • {gpsOk ? 'Actif' : 'En attente'}    Position : {geo.address}
-          </Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.departLabel}>Départ</Text>
+            <Text style={styles.bottomText} numberOfLines={2}>
+              {fromAddress || geo.address}
+            </Text>
+            <Text style={styles.departTime}>{tripTimeLabel(startedAt) || formatClock()}</Text>
+          </View>
+          <View style={styles.statusCol}>
+            <View style={styles.statusRow}>
+              <View style={[styles.statusDot, { backgroundColor: gpsOk ? Colors.success : Colors.warning }]} />
+              <Text style={styles.bottomMeta}>GPS • {gpsOk ? 'Actif' : 'En attente'}</Text>
+            </View>
+            <View style={styles.statusRow}>
+              <View style={[styles.statusDot, { backgroundColor: Colors.success }]} />
+              <Text style={styles.bottomMeta}>Moteur • ON</Text>
+            </View>
+          </View>
         </View>
         <Button
           label="Terminer la course"
@@ -124,7 +135,15 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     padding: 12,
     marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
   },
-  bottomText: { fontWeight: '700', color: Colors.text },
-  bottomMeta: { color: Colors.textSecondary, marginTop: 4, fontSize: 12 },
+  departLabel: { color: Colors.textSecondary, fontSize: 11, fontWeight: '700', letterSpacing: 0.4 },
+  bottomText: { fontWeight: '700', color: Colors.text, marginTop: 2 },
+  departTime: { color: Colors.textSecondary, marginTop: 2, fontSize: 12 },
+  statusCol: { alignItems: 'flex-end', gap: 6, paddingTop: 2 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  statusDot: { width: 7, height: 7, borderRadius: 4 },
+  bottomMeta: { color: Colors.textSecondary, fontSize: 12, fontWeight: '600' },
 });

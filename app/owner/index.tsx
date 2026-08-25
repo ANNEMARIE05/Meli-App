@@ -4,41 +4,74 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { MapPreview } from '@/components/ui/map-preview';
 import { Screen } from '@/components/ui/screen';
-import { alerts, owner, vehicles } from '@/constants/data';
+import { owner } from '@/constants/data';
 import { Colors, Radius, Shadow } from '@/constants/theme';
 import { useAuth } from '@/context/auth-context';
 import { useLocation } from '@/context/location-context';
+import { useWhatsGPS } from '@/context/whatsgps-context';
 
 export default function OwnerHomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const geo = useLocation();
+  const { vehicles, statusCounts, alarms, statuses } = useWhatsGPS();
   const name = user?.fullName ?? owner.fullName;
+
+  const primaryVehicle = vehicles[0];
+  const primaryStatus = primaryVehicle ? statuses[primaryVehicle.carId] : undefined;
+  const primaryLat = primaryStatus?.lat ?? geo.coords?.latitude;
+  const primaryLng = primaryStatus?.lon ?? geo.coords?.longitude;
+
+  const totalVehiclesCount = statusCounts.allCount || vehicles.length || 3;
 
   return (
     <Screen scroll>
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text style={styles.hello}>Bonjour 👋 {name}</Text>
+          <Text style={styles.roleSub}>Gestionnaire Flotte & Propriétaire</Text>
         </View>
+        <Pressable onPress={() => router.push('/driver' as any)} style={styles.switchModeBtn}>
+          <Ionicons name="swap-horizontal" size={16} color={Colors.primary} />
+          <Text style={styles.switchModeText}>Mode Chauffeur</Text>
+        </Pressable>
         <Pressable onPress={() => router.push('/owner/profile')} style={styles.avatar}>
           <Text style={styles.avatarText}>{name.slice(0, 1)}</Text>
         </Pressable>
       </View>
 
       <View style={styles.metrics}>
-        <Metric icon="car-outline" color="#2563EB" bg="#EFF6FF" value={`${vehicles.length} Véhicules`} onPress={() => router.push('/owner/vehicles')} />
-        <Metric icon="warning-outline" color={Colors.danger} bg={Colors.dangerBg} value="2 Alertes" onPress={() => router.push('/owner/alerts')} />
-        <Metric icon="key-outline" color={Colors.primary} bg={Colors.primarySoft} value="1 Entretiens" onPress={() => router.push('/owner/maintenance')} />
+        <Metric
+          icon="car-outline"
+          color="#2563EB"
+          bg="#EFF6FF"
+          value={`${totalVehiclesCount} Véhicules`}
+          onPress={() => router.push('/owner/vehicles')}
+        />
+        <Metric
+          icon="construct-outline"
+          color={Colors.primary}
+          bg={Colors.primarySoft}
+          value="Entretiens & Km"
+          onPress={() => router.push('/owner/maintenance')}
+        />
+        <Metric
+          icon="card-outline"
+          color="#059669"
+          bg="#ECFDF5"
+          value="Abonnement"
+          onPress={() => router.push('/owner/subscription')}
+        />
       </View>
 
-      <Pressable onPress={() => router.push({ pathname: '/owner/tracking/[id]', params: { id: 'hilux' } })}>
+      <Pressable onPress={() => router.push({ pathname: '/owner/tracking/[id]', params: { id: primaryVehicle ? String(primaryVehicle.carId) : 'hilux' } })}>
         <MapPreview
           height={170}
-          latitude={geo.coords?.latitude}
-          longitude={geo.coords?.longitude}
-          label={`Toyota Hilux  ${geo.address}`}
-          permissionDenied={geo.permission === 'denied'}
+          latitude={primaryLat}
+          longitude={primaryLng}
+          heading={primaryStatus?.dir}
+          label={`${primaryVehicle?.machineName || 'Toyota Hilux'} • ${primaryStatus?.online ? 'En direct' : 'Position GPS'}`}
+          permissionDenied={geo.permission === 'denied' && !primaryStatus}
           onRequestPermission={() => void geo.requestPermission()}
         />
       </Pressable>
@@ -46,11 +79,11 @@ export default function OwnerHomeScreen() {
       <Text style={styles.section}>Accès rapide</Text>
       <View style={styles.quick}>
         <Quick icon="car-sport-outline" label="Véhicules" onPress={() => router.push('/owner/vehicles')} />
-        <Quick icon="navigate-outline" label="Suivi" onPress={() => router.push({ pathname: '/owner/tracking/[id]', params: { id: 'hilux' } })} />
+        <Quick icon="navigate-outline" label="Suivi" onPress={() => router.push({ pathname: '/owner/tracking/[id]', params: { id: primaryVehicle ? String(primaryVehicle.carId) : 'hilux' } })} />
         <Quick icon="time-outline" label="Historique" onPress={() => router.push('/owner/history')} />
-        <Quick icon="notifications-outline" label="Alertes" onPress={() => router.push('/owner/alerts')} />
-        <Quick icon="bar-chart-outline" label="Rapports" onPress={() => router.push('/owner/reports')} />
         <Quick icon="construct-outline" label="Entretiens" onPress={() => router.push('/owner/maintenance')} />
+        <Quick icon="card-outline" label="Abonnement" onPress={() => router.push('/owner/subscription')} />
+        <Quick icon="notifications-outline" label="Alertes" onPress={() => router.push('/owner/alerts')} />
       </View>
 
       <View style={styles.rowBetween}>
@@ -59,27 +92,28 @@ export default function OwnerHomeScreen() {
           <Text style={styles.link}>Voir tout</Text>
         </Pressable>
       </View>
-      {alerts.slice(0, 2).map((a) => (
-        <Pressable key={a.id} style={styles.alert} onPress={() => router.push('/owner/alerts')}>
-          <View style={[styles.alertIcon, { backgroundColor: a.type === 'critique' ? Colors.dangerBg : Colors.primarySoft }]}>
+      {alarms.slice(0, 2).map((a) => (
+        <Pressable key={a.alarmId} style={styles.alert} onPress={() => router.push('/owner/alerts')}>
+          <View style={[styles.alertIcon, { backgroundColor: a.isNew !== false ? Colors.dangerBg : Colors.primarySoft }]}>
             <Ionicons
-              name={a.type === 'critique' ? 'warning' : 'key'}
+              name={a.isNew !== false ? 'warning' : 'notifications'}
               size={18}
-              color={a.type === 'critique' ? Colors.danger : Colors.primary}
+              color={a.isNew !== false ? Colors.danger : Colors.primary}
             />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.alertTitle}>{a.title}</Text>
+            <Text style={styles.alertTitle}>{a.remark || 'Alerte Traceur'}</Text>
             <Text style={styles.alertSub}>
-              {a.vehicle} - {a.time.toLowerCase()}
+              Véhicule #{a.carId} - {new Date(a.alarmTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </View>
-          {a.unread ? <View style={styles.unread} /> : null}
+          {a.isNew !== false ? <View style={styles.unread} /> : null}
         </Pressable>
       ))}
     </Screen>
   );
 }
+
 
 function Metric({
   icon,
@@ -124,12 +158,23 @@ function Quick({
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
-  hello: { fontSize: 22, fontWeight: '800', color: Colors.text },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 18, gap: 8 },
+  hello: { fontSize: 20, fontWeight: '800', color: Colors.text },
+  roleSub: { fontSize: 11, color: Colors.textSecondary, marginTop: 2, fontWeight: '500' },
+  switchModeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.primarySoft,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: Radius.full,
+  },
+  switchModeText: { color: Colors.primary, fontSize: 11, fontWeight: '700' },
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: Colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',

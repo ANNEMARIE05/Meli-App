@@ -13,6 +13,7 @@ type LocationContextValue = {
   speedKmh: number;
   accuracy: number | null;
   address: string;
+  lastFixAt: Date | null;
   error: string | null;
   requestPermission: () => Promise<boolean>;
   refresh: () => Promise<void>;
@@ -27,6 +28,7 @@ export function LocationProvider({ children, enabled = true }: { children: React
   const [speedKmh, setSpeedKmh] = useState(0);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [address, setAddress] = useState('Recherche de la position…');
+  const [lastFixAt, setLastFixAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const lastGeocode = useRef(0);
   const lastPoint = useRef<GeoPoint | null>(null);
@@ -61,6 +63,7 @@ export function LocationProvider({ children, enabled = true }: { children: React
     setCoords(next);
     setSpeedKmh(speedToKmh(loc.coords.speed));
     setAccuracy(loc.coords.accuracy);
+    setLastFixAt(new Date(loc.timestamp || Date.now()));
     setError(null);
     void geocodeIfNeeded(next);
   }
@@ -152,11 +155,12 @@ export function LocationProvider({ children, enabled = true }: { children: React
       speedKmh,
       accuracy,
       address,
+      lastFixAt,
       error,
       requestPermission,
       refresh,
     }),
-    [accuracy, address, coords, error, permission, ready, speedKmh]
+    [accuracy, address, coords, error, lastFixAt, permission, ready, speedKmh]
   );
 
   return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;
