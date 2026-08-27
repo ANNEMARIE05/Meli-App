@@ -32,9 +32,17 @@ const config = {
     },
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
+    usesCleartextTraffic: true,
+    permissions: [
+      'ACCESS_COARSE_LOCATION',
+      'ACCESS_FINE_LOCATION',
+      'CAMERA',
+      'INTERNET',
+      'VIBRATE',
+    ],
     config: {
       googleMaps: {
-        apiKey: process.env.GOOGLE_MAPS_API_KEY_ANDROID,
+        apiKey: process.env.GOOGLE_MAPS_API_KEY_ANDROID || '',
       },
     },
   },
