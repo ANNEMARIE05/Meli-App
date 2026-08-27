@@ -12,6 +12,20 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_ENV": "preview",
+        "EXPO_PUBLIC_WHATSGPS_MOCK_FALLBACK": "true"
+      }
+    },
+    "apk": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_ENV": "production",
+        "EXPO_PUBLIC_WHATSGPS_MOCK_FALLBACK": "true"
       }
     },
     "production": {

@@ -5,6 +5,7 @@ import MapView, { Marker, Polyline, Circle, Polygon, PROVIDER_DEFAULT } from 're
 
 import { DEFAULT_DELTA, FALLBACK_COORDS, type GeoPoint } from '@/constants/geo';
 import { Colors, Radius, Shadow } from '@/constants/theme';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 export type MapFence = {
   id: number;
@@ -110,111 +111,121 @@ export function MapPreview({
 
   return (
     <View style={[styles.wrap, fill ? styles.fill : { height }, dark && styles.dark]}>
-      <MapView
-        ref={mapRef}
-        style={StyleSheet.absoluteFill}
-        provider={PROVIDER_DEFAULT}
-        initialRegion={currentRegion}
-        scrollEnabled={isInteractive}
-        zoomEnabled={isInteractive}
-        rotateEnabled={isInteractive}
-        pitchEnabled={isInteractive}
-        showsUserLocation={showUser && !permissionDenied}
-        showsMyLocationButton={false}
-        showsCompass={isInteractive}
-        showsScale={isInteractive}
-        onMapReady={() => setMapReady(true)}
+      <ErrorBoundary
+        fallback={
+          <View style={[StyleSheet.absoluteFill, styles.fallbackContainer]}>
+            <Ionicons name="map-outline" size={36} color={Colors.textSecondary} />
+            <Text style={styles.fallbackText}>Carte non disponible sur cet appareil</Text>
+            {label ? <Text style={styles.fallbackSub}>{label}</Text> : null}
+          </View>
+        }
       >
-        {/* Geofence Overlays */}
-        {fences?.map((fence) => {
-          if (fence.type === 0) {
-            // Circle fence
-            const [fLng, fLat] = fence.points.split(',').map(Number);
-            if (!isNaN(fLat) && !isNaN(fLng)) {
-              return (
-                <Circle
-                  key={`fence-${fence.id}`}
-                  center={{ latitude: fLat, longitude: fLng }}
-                  radius={fence.radius || 500}
-                  fillColor="rgba(46, 125, 50, 0.15)"
-                  strokeColor={Colors.primary}
-                  strokeWidth={2}
-                />
-              );
+        <MapView
+          ref={mapRef}
+          style={StyleSheet.absoluteFill}
+          provider={PROVIDER_DEFAULT}
+          initialRegion={currentRegion}
+          scrollEnabled={isInteractive}
+          zoomEnabled={isInteractive}
+          rotateEnabled={isInteractive}
+          pitchEnabled={isInteractive}
+          showsUserLocation={showUser && !permissionDenied}
+          showsMyLocationButton={false}
+          showsCompass={isInteractive}
+          showsScale={isInteractive}
+          onMapReady={() => setMapReady(true)}
+        >
+          {/* Geofence Overlays */}
+          {fences?.map((fence) => {
+            if (fence.type === 0) {
+              // Circle fence
+              const [fLng, fLat] = fence.points.split(',').map(Number);
+              if (!isNaN(fLat) && !isNaN(fLng)) {
+                return (
+                  <Circle
+                    key={`fence-${fence.id}`}
+                    center={{ latitude: fLat, longitude: fLng }}
+                    radius={fence.radius || 500}
+                    fillColor="rgba(46, 125, 50, 0.15)"
+                    strokeColor={Colors.primary}
+                    strokeWidth={2}
+                  />
+                );
+              }
+            } else {
+              // Polygon fence
+              const coords = fence.points
+                .split(';')
+                .map((p) => {
+                  const [pLng, pLat] = p.split(',').map(Number);
+                  return { latitude: pLat, longitude: pLng };
+                })
+                .filter((c) => !isNaN(c.latitude) && !isNaN(c.longitude));
+
+              if (coords.length >= 3) {
+                return (
+                  <Polygon
+                    key={`fence-${fence.id}`}
+                    coordinates={coords}
+                    fillColor="rgba(46, 125, 50, 0.15)"
+                    strokeColor={Colors.primary}
+                    strokeWidth={2}
+                  />
+                );
+              }
             }
-          } else {
-            // Polygon fence
-            const coords = fence.points
-              .split(';')
-              .map((p) => {
-                const [pLng, pLat] = p.split(',').map(Number);
-                return { latitude: pLat, longitude: pLng };
-              })
-              .filter((c) => !isNaN(c.latitude) && !isNaN(c.longitude));
+            return null;
+          })}
 
-            if (coords.length >= 3) {
-              return (
-                <Polygon
-                  key={`fence-${fence.id}`}
-                  coordinates={coords}
-                  fillColor="rgba(46, 125, 50, 0.15)"
-                  strokeColor={Colors.primary}
-                  strokeWidth={2}
-                />
-              );
-            }
-          }
-          return null;
-        })}
-
-        {/* Custom Extra Markers */}
-        {markers?.map((m) => (
-          <Marker
-            key={`marker-${m.id}`}
-            coordinate={{ latitude: m.latitude, longitude: m.longitude }}
-            title={m.title}
-            description={m.subtitle}
-          >
-            <View style={[styles.markerPin, { backgroundColor: m.color || Colors.info }]}>
-              <Ionicons name="location" size={14} color={Colors.white} />
-            </View>
-          </Marker>
-        ))}
-
-
-        {latitude != null && longitude != null ? (
-          <Marker
-            coordinate={{ latitude: lat, longitude: lng }}
-            title={label || 'Véhicule Meli'}
-            description={`${lat.toFixed(5)}, ${lng.toFixed(5)}`}
-            anchor={{ x: 0.5, y: 0.5 }}
-          >
-            <View style={styles.markerContainer}>
-              <View style={styles.pulseRing} />
-              <View
-                style={[
-                  styles.markerPin,
-                  heading !== undefined && {
-                    transform: [{ rotate: `${heading}deg` }],
-                  },
-                ]}
-              >
-                <Ionicons name={heading !== undefined ? 'navigate' : 'car-sport'} size={16} color={Colors.white} />
+          {/* Custom Extra Markers */}
+          {markers?.map((m) => (
+            <Marker
+              key={`marker-${m.id}`}
+              coordinate={{ latitude: m.latitude, longitude: m.longitude }}
+              title={m.title}
+              description={m.subtitle}
+            >
+              <View style={[styles.markerPin, { backgroundColor: m.color || Colors.info }]}>
+                <Ionicons name="location" size={14} color={Colors.white} />
               </View>
-            </View>
-          </Marker>
-        ) : null}
+            </Marker>
+          ))}
 
-        {/* Route path polyline */}
-        {path && path.length > 1 && (
-          <Polyline
-            coordinates={path}
-            strokeColor={Colors.primary}
-            strokeWidth={4}
-            lineDashPattern={[0]}
-          />
-        )}
-      </MapView>
+
+          {latitude != null && longitude != null ? (
+            <Marker
+              coordinate={{ latitude: lat, longitude: lng }}
+              title={label || 'Véhicule Meli'}
+              description={`${lat.toFixed(5)}, ${lng.toFixed(5)}`}
+              anchor={{ x: 0.5, y: 0.5 }}
+            >
+              <View style={styles.markerContainer}>
+                <View style={styles.pulseRing} />
+                <View
+                  style={[
+                    styles.markerPin,
+                    heading !== undefined && {
+                      transform: [{ rotate: `${heading}deg` }],
+                    },
+                  ]}
+                >
+                  <Ionicons name={heading !== undefined ? 'navigate' : 'car-sport'} size={16} color={Colors.white} />
+                </View>
+              </View>
+            </Marker>
+          ) : null}
+
+          {/* Route path polyline */}
+          {path && path.length > 1 && (
+            <Polyline
+              coordinates={path}
+              strokeColor={Colors.primary}
+              strokeWidth={4}
+              lineDashPattern={[0]}
+            />
+          )}
+        </MapView>
+      </ErrorBoundary>
 
 
       {/* Interactive Floating Zoom Controls */}
@@ -388,5 +399,23 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontWeight: '700',
     fontSize: 13,
+  },
+  fallbackContainer: {
+    backgroundColor: '#1E242C',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  fallbackText: {
+    color: Colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  fallbackSub: {
+    color: Colors.primary,
+    fontSize: 12,
+    marginTop: 4,
   },
 });

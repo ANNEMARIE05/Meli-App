@@ -83,7 +83,7 @@ const config = {
   ],
   experiments: {
     typedRoutes: true,
-    reactCompiler: true,
+    reactCompiler: false,
   },
   // Variables supplémentaires accessibles via Constants.expoConfig.extra
   extra: {

@@ -1,14 +1,20 @@
 import { ThemeProvider, DefaultTheme } from '@react-navigation/native';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import 'react-native-reanimated';
 
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { Colors } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { LocationProvider } from '@/context/location-context';
 import { TripProvider } from '@/context/trip-context';
 import { WhatsGPSProvider } from '@/context/whatsgps-context';
+
+// Keep splash screen visible until initial app state is loaded
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const AppTheme = {
   ...DefaultTheme,
@@ -24,6 +30,12 @@ const AppTheme = {
 
 function LocatedApp() {
   const { user, ready } = useAuth();
+
+  useEffect(() => {
+    if (ready) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [ready]);
 
   return (
     <LocationProvider enabled={ready && !!user}>
@@ -61,11 +73,13 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider value={AppTheme}>
-      <AuthProvider>
-        <LocatedApp />
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider value={AppTheme}>
+        <AuthProvider>
+          <LocatedApp />
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
