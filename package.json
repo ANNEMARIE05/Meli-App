@@ -8,6 +8,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "backoffice": "npm --prefix backoffice run dev",
+    "backoffice:build": "npm --prefix backoffice run build",
     "lint": "expo lint"
   },
   "dependencies": {
