@@ -41,9 +41,13 @@ const config = {
       'VIBRATE',
     ],
     config: {
-      googleMaps: {
-        apiKey: process.env.GOOGLE_MAPS_API_KEY_ANDROID || '',
-      },
+      ...(process.env.GOOGLE_MAPS_API_KEY_ANDROID
+        ? {
+            googleMaps: {
+              apiKey: process.env.GOOGLE_MAPS_API_KEY_ANDROID,
+            },
+          }
+        : {}),
     },
   },
   web: {
@@ -76,8 +80,6 @@ const config = {
       {
         locationWhenInUsePermission:
           'Meli utilise votre position pour afficher les véhicules, suivre les courses et enregistrer les trajets.',
-        locationAlwaysAndWhenInUsePermission:
-          'Meli utilise votre position pour suivre les courses en cours.',
       },
     ],
   ],

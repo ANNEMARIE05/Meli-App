@@ -6,6 +6,7 @@ import MapView, { Marker, Polyline, Circle, Polygon, PROVIDER_DEFAULT } from 're
 import { DEFAULT_DELTA, FALLBACK_COORDS, type GeoPoint } from '@/constants/geo';
 import { Colors, Radius, Shadow } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { useLocation } from '@/context/location-context';
 
 export type MapFence = {
   id: number;
@@ -63,9 +64,18 @@ export function MapPreview({
   const mapRef = useRef<MapView | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
+  let isPermissionGranted = false;
+  try {
+    const geo = useLocation();
+    isPermissionGranted = geo.permission === 'granted';
+  } catch {
+    isPermissionGranted = false;
+  }
+
   const lat = latitude ?? FALLBACK_COORDS.latitude;
   const lng = longitude ?? FALLBACK_COORDS.longitude;
   const isInteractive = interactive ?? !!fill;
+  const canShowUserLocation = Boolean(showUser && isPermissionGranted && !permissionDenied);
 
   const currentRegion = {
     latitude: lat,
@@ -129,7 +139,7 @@ export function MapPreview({
           zoomEnabled={isInteractive}
           rotateEnabled={isInteractive}
           pitchEnabled={isInteractive}
-          showsUserLocation={showUser && !permissionDenied}
+          showsUserLocation={canShowUserLocation}
           showsMyLocationButton={false}
           showsCompass={isInteractive}
           showsScale={isInteractive}

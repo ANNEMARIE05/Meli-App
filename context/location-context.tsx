@@ -69,28 +69,39 @@ export function LocationProvider({ children, enabled = true }: { children: React
   }
 
   const requestPermission = async () => {
-    const current = await Location.getForegroundPermissionsAsync();
-    let status = current.status;
-    if (status !== 'granted') {
-      const asked = await Location.requestForegroundPermissionsAsync();
-      status = asked.status;
+    try {
+      const current = await Location.getForegroundPermissionsAsync();
+      let status = current.status;
+      if (status !== 'granted') {
+        const asked = await Location.requestForegroundPermissionsAsync();
+        status = asked.status;
+      }
+      const granted = status === 'granted';
+      setPermission(granted ? 'granted' : 'denied');
+      if (!granted) {
+        setError('Permission de localisation refusée');
+        setAddress('Localisation non autorisée');
+      }
+      return granted;
+    } catch (err) {
+      console.warn('[LocationContext] Permission request error:', err);
+      setPermission('denied');
+      setError('Permission non accordée');
+      return false;
     }
-    const granted = status === 'granted';
-    setPermission(granted ? 'granted' : 'denied');
-    if (!granted) {
-      setError('Permission de localisation refusée');
-      setAddress('Localisation non autorisée');
-    }
-    return granted;
   };
 
   const refresh = async () => {
-    const granted = permission === 'granted' || (await requestPermission());
-    if (!granted) {
-      return;
+    try {
+      const granted = permission === 'granted' || (await requestPermission());
+      if (!granted) {
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      applyLocation(loc);
+    } catch (err) {
+      console.warn('[LocationContext] Refresh location error:', err);
     }
-    const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-    applyLocation(loc);
   };
 
   useEffect(() => {
@@ -104,30 +115,63 @@ export function LocationProvider({ children, enabled = true }: { children: React
 
     (async () => {
       try {
-        const granted = await requestPermission();
-        if (!granted || cancelled) {
+        // Silently check if permission was already granted by the user previously
+        let isGranted = false;
+        try {
+          const current = await Location.getForegroundPermissionsAsync();
+          isGranted = current.status === 'granted';
+          if (!cancelled) {
+            setPermission(isGranted ? 'granted' : current.status === 'denied' ? 'denied' : 'undetermined');
+          }
+        } catch {
+          isGranted = false;
+        }
+
+        // If not granted yet, gracefully finish initialization without crashing or blocking navigation
+        if (!isGranted || cancelled) {
+          if (!cancelled) {
+            setAddress('Localisation non activée');
+          }
           return;
         }
-        const last = await Location.getLastKnownPositionAsync();
-        if (last && !cancelled) {
-          applyLocation(last);
-        }
-        const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        if (!cancelled) {
-          applyLocation(current);
-        }
-        sub = await Location.watchPositionAsync(
-          {
-            accuracy: Location.Accuracy.High,
-            distanceInterval: 8,
-            timeInterval: 3000,
-          },
-          (loc) => {
-            if (!cancelled) {
-              applyLocation(loc);
-            }
+
+        // Try to get last known position first (fast & non-blocking)
+        try {
+          const last = await Location.getLastKnownPositionAsync();
+          if (last && !cancelled) {
+            applyLocation(last);
           }
-        );
+        } catch {
+          // Non-critical, continue to current position
+        }
+
+        // Fetch current position with Balanced accuracy (works for both Precise and Approximate permissions)
+        try {
+          const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          if (!cancelled) {
+            applyLocation(current);
+          }
+        } catch {
+          // Non-critical, watchPositionAsync will follow
+        }
+
+        // Subscribe to live position updates
+        try {
+          sub = await Location.watchPositionAsync(
+            {
+              accuracy: Location.Accuracy.Balanced,
+              distanceInterval: 8,
+              timeInterval: 4000,
+            },
+            (loc) => {
+              if (!cancelled) {
+                applyLocation(loc);
+              }
+            }
+          );
+        } catch (subErr) {
+          console.warn('[LocationContext] watchPositionAsync error:', subErr);
+        }
       } catch {
         if (!cancelled) {
           setError('Impossible de lire la position GPS');
@@ -142,7 +186,11 @@ export function LocationProvider({ children, enabled = true }: { children: React
 
     return () => {
       cancelled = true;
-      sub?.remove();
+      try {
+        sub?.remove();
+      } catch {
+        // ignore subscription removal error
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled]);
